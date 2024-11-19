@@ -5,6 +5,10 @@ from keyboards.for_navigate import keyboard
 private_router = Router()
 
 
+decks = {}
+isOnDeck = False
+currentDeck = None
+
 @private_router.message(CommandStart())
 async def start_cmd(message: types.Message):
     await message.reply('Hello', reply_markup=keyboard)
@@ -13,10 +17,17 @@ async def start_cmd(message: types.Message):
 async def about(message: types.Message):
     await message.answer('im dibidibidu')
     
-@private_router.message(or_f(Command('options'), F.text.lower() == 'options'))
-async def options(message: types.Message):
-    await message.answer('My options are..')
+@private_router.message(or_f(Command('new_deck'), F.text.lower() == 'new_deck'))
+async def new_deck(message: types.Message):
+    await message.answer('Введіть назву колоди')
 
-@private_router.message(Command('links'))
+    async def get_deck_name(next_message: types.Message):  
+            deck_name = next_message.text
+            decks[deck_name] = {} 
+            await next_message.answer(f"Колода '{deck_name}' успішно створена")
+
+@private_router.message(Command('choose_deck'))
 async def links(message: types.Message):
-    await message.answer('links')
+    await message.answer('Enter card`s front side')
+    
+    await message.answer('Enter card`s back side')

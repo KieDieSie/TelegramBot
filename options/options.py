@@ -2,7 +2,7 @@ from aiogram.types import BotCommand
 
 
 private = [
-    BotCommand(command='/options', description='all options for my bot'),
+    BotCommand(command='/new_deck', description='Створити нову колоду карт'),
     BotCommand(command='/links', description='links'),
     BotCommand(command='/about', description='about')
 ]

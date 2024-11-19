@@ -3,7 +3,7 @@ from aiogram import types
 keyboard = types.ReplyKeyboardMarkup(
     keyboard=[
         [
-            types.KeyboardButton(text='/options'),
+            types.KeyboardButton(text='/new_deck'),
             types.KeyboardButton(text='/links'),
         ],
         [
