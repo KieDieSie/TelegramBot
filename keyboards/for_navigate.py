@@ -2,19 +2,31 @@ from aiogram import types
 
 
 
-keyboard = types.ReplyKeyboardMarkup(
+main_menu = types.ReplyKeyboardMarkup(
     keyboard=[
         [
-            types.KeyboardButton(text='/create_deck'),
+            types.KeyboardButton(text='Create deck'),
+            types.KeyboardButton(text='Delete deck')
         ],
         [
-            types.KeyboardButton(text='/delete_deck')
-        ],
-        [
-            types.KeyboardButton(text='/select_deck')
-        ]
+            types.KeyboardButton(text='Select deck')
+    ]
         
     ],
-    resize_keyboard=True,
-    input_field_placeholder='All commands'
+    resize_keyboard=True
+)
+
+deck_menu = types.ReplyKeyboardMarkup(
+    keyboard=[
+        [
+            types.KeyboardButton(text='Create card'), 
+            types.KeyboardButton(text='Delete card')
+        ],
+        [
+            types.KeyboardButton(text='Review cards')
+        ],
+        [
+            types.KeyboardButton(text='Main menu')
+        ]
+    ]
 )
