@@ -10,7 +10,7 @@ main_menu = types.ReplyKeyboardMarkup(
         ],
         [
             types.KeyboardButton(text='Select deck')
-    ]
+        ],
         
     ],
     resize_keyboard=True

@@ -37,6 +37,7 @@ async def save_deck_name(message: types.Message, state: FSMContext):
         user_decks[deck_name] = {}
         user_data[user_id]["current_deck"] = deck_name
         await message.answer(f"Deck '{deck_name}' created and selected.", reply_markup=deck_menu)
+    await state.clear()
 
 #DELETING DECK
 
@@ -56,6 +57,8 @@ async def delete_deck(message: types.Message, state: FSMContext):
         await message.answer('There is no deck with this name')
     else:
         user_data[message.from_user.id]['decks'].pop(deck_name)
+        await message.answer(f'Deck {deck_name} was deleted!')
+    await state.clear()
 
 #SELECTING DECK
 
@@ -75,8 +78,10 @@ async def select_deck(message: types.Message, state: FSMContext):
         await message.answer('There is no deck with this name')
     else:
         user_data[message.from_user.id]['current_deck'] = deck_name
+        await message.answer(f'Deck {deck_name} was selected!')
+    await state.clear()
         
-#CREATING CARDS
+# #CREATING CARDS
 
 @private_router.message(F.text=='Create card')
 async def create_card(message: types.Message, state: FSMContext):
@@ -108,7 +113,7 @@ async def save_card_back(message: types.Message, state: FSMContext):
     await state.clear()
     await message.answer(f"Card '{front}' added to the deck '{current_deck}'.", reply_markup=deck_menu)
     
-#DELETING CARDS
+# #DELETING CARDS
 
 @private_router.message((F.text==("Delete card")))
 async def getting_name_to_delete_card(message: types.Message, state: FSMContext):
@@ -131,8 +136,10 @@ async def delete_card(message: types.Message, state: FSMContext):
         await message.answer('There is no such card')
     else:
         user_data[message.from_user.id]['decks'][current_deck].pop(card_to_del)
+        await message.answer(f'Card {card_to_del} was deleted!')
+    await state.clear()
         
-#REVIEWING CARDS
+# #REVIEWING CARDS
 
 @private_router.message((F.text=="Review cards"))
 async def review_cards(message: types.Message, state: FSMContext):
@@ -164,7 +171,7 @@ async def check_card_answer(message: types.Message, state: FSMContext):
         
         await state.set_state(DeckStates.reviewing_cards)
         
-#MEIN_MENU
+# #MEIN_MENU
 
 @private_router.message((F.text=="Main menu"))
 async def back_to_main_menu(message: types.Message, state: FSMContext):
