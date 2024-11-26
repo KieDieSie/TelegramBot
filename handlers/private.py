@@ -32,7 +32,7 @@ async def save_deck_name(message: types.Message, state: FSMContext):
     user_decks = user_data[user_id]['decks']
 
     if deck_name in user_decks:
-        await message.answer(f"THe deck '{deck_name}' already exists. Try another one")
+        await message.answer(f"The deck '{deck_name}' already exists. Try another one")
     else:
         user_decks[deck_name] = {}
         user_data[user_id]["current_deck"] = deck_name
@@ -44,9 +44,12 @@ async def save_deck_name(message: types.Message, state: FSMContext):
 @private_router.message((F.text=='Delete deck'), StateFilter(None))
 async def getting_name_to_delete_deck(message: types.Message, state: FSMContext):
     decks = user_data[message.from_user.id]['decks'].keys()
-    await message.answer(str(decks))
-    await message.answer('Enter name of the deck you want to delete(Including cases):')
-    await state.set_state(DeckStates.deleting_deck)
+    if not decks:
+        await message.answer('You have not created any decks yet')
+    else:        
+        await message.answer(str(decks))
+        await message.answer('Enter name of the deck you want to delete(Including cases):')
+        await state.set_state(DeckStates.deleting_deck)
 
 @private_router.message(DeckStates.deleting_deck, F.text)
 async def delete_deck(message: types.Message, state: FSMContext):          
@@ -65,9 +68,12 @@ async def delete_deck(message: types.Message, state: FSMContext):
 @private_router.message((F.text=='Select deck'), StateFilter(None))
 async def getting_name_to_select_deck(message: types.Message, state: FSMContext):
     decks = user_data[message.from_user.id]['decks'].keys()
-    await message.answer(str(decks))
-    await message.answer('Enter name of the deck you want select(Including cases):')
-    await state.set_state(DeckStates.selecting_deck)
+    if not decks:
+        await message.answer('You have not created any decks yet')
+    else:        
+        await message.answer(str(decks))
+        await message.answer('Enter name of the deck you want select(Including cases):')
+        await state.set_state(DeckStates.selecting_deck)
 
 @private_router.message(DeckStates.deleting_deck, F.text)
 async def select_deck(message: types.Message, state: FSMContext):          
@@ -118,14 +124,16 @@ async def save_card_back(message: types.Message, state: FSMContext):
 @private_router.message((F.text==("Delete card")))
 async def getting_name_to_delete_card(message: types.Message, state: FSMContext):
     current_deck = user_data[message.from_user.id]['current_deck']
+    cards = user_data[message.from_user.id]['decks'][current_deck]
     if not current_deck:
         await message.answer('No deck selected. Select deck first')
     else:
-        current_deck = user_data[message.from_user.id]['current_deck']
-        cards = user_data[message.from_user.id]['decks'][current_deck]
-        await message.answer(str(cards.keys()))
-        await message.answer('Enter front value of card you want to delete')
-        await state.set_state(DeckStates.deleting_card)
+        if not cards:
+            await message.answer('No cards in the selected deck.')
+        else:
+            await message.answer(str(cards.keys()))
+            await message.answer('Enter front value of card you want to delete')
+            await state.set_state(DeckStates.deleting_card)
     
 @private_router.message(DeckStates.deleting_card, F.text)
 async def delete_card(message: types.Message, state: FSMContext):
@@ -162,7 +170,8 @@ async def review_cards(message: types.Message, state: FSMContext):
 async def check_card_answer(message: types.Message, state: FSMContext):
     current_deck = user_data[message.from_user.id]["current_deck"]
     cards = user_data[message.from_user.id]['decks'][current_deck]
-    card_back = cards[(await state.get_data())]
+    state_data = await state.get_data()
+    card_back = cards[state_data['current_card']][0]
     if message.text == card_back:
         await state.clear()
         await message.answer("Correct!", reply_markup=deck_menu)
