@@ -15,7 +15,8 @@ user_data = {}
 
 @private_router.message(CommandStart())
 async def start_cmd(message: types.Message):
-    user_data[message.from_user.id] = {'decks': {}, 'current_deck': None}
+    if not message.from_user.id in user_data:
+        user_data[message.from_user.id] = {'decks': {}, 'current_deck': None}
     await message.answer('Welcome! Choose your action:', reply_markup=main_menu)
  
 #CREATING DECK 
@@ -37,17 +38,17 @@ async def save_deck_name(message: types.Message, state: FSMContext):
         user_decks[deck_name] = {}
         user_data[user_id]["current_deck"] = deck_name
         await message.answer(f"Deck '{deck_name}' created and selected.", reply_markup=deck_menu)
-    await state.clear()
+        await state.clear()
 
 #DELETING DECK
 
 @private_router.message((F.text=='Delete deck'), StateFilter(None))
 async def getting_name_to_delete_deck(message: types.Message, state: FSMContext):
-    decks = user_data[message.from_user.id]['decks'].keys()
+    decks = list(user_data[message.from_user.id]['decks'].keys())
     if not decks:
         await message.answer('You have not created any decks yet')
     else:        
-        await message.answer(str(decks))
+        await message.answer(', '.join(decks))
         await message.answer('Enter name of the deck you want to delete(Including cases):')
         await state.set_state(DeckStates.deleting_deck)
 
@@ -61,21 +62,21 @@ async def delete_deck(message: types.Message, state: FSMContext):
     else:
         user_data[message.from_user.id]['decks'].pop(deck_name)
         await message.answer(f'Deck {deck_name} was deleted!')
-    await state.clear()
+        await state.clear()
 
 #SELECTING DECK
 
 @private_router.message((F.text=='Select deck'), StateFilter(None))
 async def getting_name_to_select_deck(message: types.Message, state: FSMContext):
-    decks = user_data[message.from_user.id]['decks'].keys()
+    decks = list(user_data[message.from_user.id]['decks'].keys())
     if not decks:
         await message.answer('You have not created any decks yet')
     else:        
-        await message.answer(str(decks))
+        await message.answer(', '.join(decks))
         await message.answer('Enter name of the deck you want select(Including cases):')
         await state.set_state(DeckStates.selecting_deck)
 
-@private_router.message(DeckStates.deleting_deck, F.text)
+@private_router.message(DeckStates.selecting_deck, F.text)
 async def select_deck(message: types.Message, state: FSMContext):          
     decks = user_data[message.from_user.id]['decks'].keys()
     deck_name = message.text
@@ -84,8 +85,8 @@ async def select_deck(message: types.Message, state: FSMContext):
         await message.answer('There is no deck with this name')
     else:
         user_data[message.from_user.id]['current_deck'] = deck_name
-        await message.answer(f'Deck {deck_name} was selected!')
-    await state.clear()
+        await message.answer(f'Deck {deck_name} was selected!', reply_markup=deck_menu)
+        await state.clear()
         
 # #CREATING CARDS
 
@@ -124,14 +125,14 @@ async def save_card_back(message: types.Message, state: FSMContext):
 @private_router.message((F.text==("Delete card")))
 async def getting_name_to_delete_card(message: types.Message, state: FSMContext):
     current_deck = user_data[message.from_user.id]['current_deck']
-    cards = user_data[message.from_user.id]['decks'][current_deck]
+    cards = list(user_data[message.from_user.id]['decks'][current_deck].keys())
     if not current_deck:
         await message.answer('No deck selected. Select deck first')
     else:
         if not cards:
             await message.answer('No cards in the selected deck.')
         else:
-            await message.answer(str(cards.keys()))
+            await message.answer(', '.join(cards))
             await message.answer('Enter front value of card you want to delete')
             await state.set_state(DeckStates.deleting_card)
     
@@ -145,28 +146,26 @@ async def delete_card(message: types.Message, state: FSMContext):
     else:
         user_data[message.from_user.id]['decks'][current_deck].pop(card_to_del)
         await message.answer(f'Card {card_to_del} was deleted!')
-    await state.clear()
+        await state.clear()
         
 # #REVIEWING CARDS
 
 @private_router.message((F.text=="Review cards"))
 async def review_cards(message: types.Message, state: FSMContext):
     current_deck = user_data[message.from_user.id]["current_deck"]
+    cards = user_data[message.from_user.id]['decks'][current_deck]
     if not current_deck:
         await message.answer("No deck selected. Choose deck first.")
-        return
+    else:
+        if not cards:
+            await message.answer("No cards in the selected deck.")
+        else:
+            card = choice(list(cards))
+            await state.set_state(DeckStates.reviewing_cards)
+            await state.update_data(current_card=card)
+            await message.answer(f"Front: {card}\nWhat is on the back?")
 
-    cards = user_data[message.from_user.id]['decks'][current_deck]
-    if not cards:
-        await message.answer("No cards in the selected deck.")
-        return
-
-    card = choice(list(cards))
-    await state.set_state(DeckStates.reviewing_cards)
-    await state.update_data(current_card=card)
-    await message.answer(f"Front: {card}\nWhat is on the back?")
-
-@private_router.message(DeckStates.reviewing_cards)
+@private_router.message(DeckStates.reviewing_cards, F.text)
 async def check_card_answer(message: types.Message, state: FSMContext):
     current_deck = user_data[message.from_user.id]["current_deck"]
     cards = user_data[message.from_user.id]['decks'][current_deck]
@@ -187,3 +186,18 @@ async def back_to_main_menu(message: types.Message, state: FSMContext):
     await state.clear()
     user_data[message.from_user.id]["current_deck"] = None
     await message.answer("Returned to main menu.", reply_markup=main_menu)
+
+#CANCEL
+
+# @private_router.message(StateFilter('*'), (F.text == 'cancel'))
+# async def cancel_handler(message: types.Message, state: FSMContext) -> None:
+#     current_deck = user_data[message.from_user.id]["current_deck"]
+#     current_state = await state.get_state()
+#     if current_state is None:
+#         return
+
+#     await state.clear()
+#     if current_deck:
+#         await message.answer("Canceled", reply_markup=deck_menu)
+#     else:
+#         await message.answer("Cancelling state", reply_markup=main_menu)
